@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    </head>
+<body>
+
+<script>
+if (!window.indexedDB) {
+    console.log("Your browser doesn't support a stable version of IndexedDB. Such and such feature will not be available.");
+}else{
+    var request = window.indexedDB.open("MyTestDatabase",6);
+
+    request.onerror = function(event) {
+        console.log(event);
+    };
+
+    request.onupgradeneeded = function(event) {
+        db = event.target.result;
+
+        db.onerror = function(event) {
+            console.log(event.target.error)
+            // console.log("Database error: " + event.target.errorCode);
+        };
+
+        console.log("Fungsi ini akan terpangil jika ada perubahan versi db");
+
+        try{
+            var objectStoreCustomers = db.createObjectStore("customers", { keyPath: "ssn" });
+            objectStoreCustomers.createIndex("name", "name", { unique: false });
+            objectStoreCustomers.createIndex("email", "email", { unique: true });
+        }catch(err){
+            console.log(err)
+            // db.deleteObjectStore("customers");        
+        }    
+
+        try{
+            var objectStoreProducts = db.createObjectStore("products", { keyPath: "ssn" });
+            objectStoreProducts.createIndex("name", "name", { unique: false });
+        }catch(err){
+            console.log(err);
+            // db.deleteObjectStore("products");        
+        }
+    };
+
+    request.onsuccess = function(event) {
+        db = event.target.result;
+
+        db.onerror = function(event) {
+            console.log(event.target.error)
+            // console.error("Database error: " + event.target.errorCode);
+        };
+
+
+        //// CREATE DATA
+        var transactionObjectStore = db.transaction(["customers"], "readwrite").objectStore("customers")
+
+        /*
+            HATI-HATI KETIKA MEMASUKAN SSN KARENA KADANG DUPLICATE DAN AKAN ERROR
+        */
+        // for(let i=13;i<20;i++){
+        //     transactionObjectStore.add({
+        //         ssn : i,
+        //         name : "test"+i,
+        //         email : "test"+i
+        //     })
+        // }          
+
+        // transactionObjectStore.add({
+        //     ssn : 11,
+        //     name : "test22",
+        //     email : "test22"
+        // })
+
+        transactionObjectStore.oncomplete = function(event){
+            console.log("Create Data")
+        }
+        /// CREATE DATA
+                    
+        //// DELETE DATA
+        let deleteData = db.transaction(["customers"], "readwrite")
+                .objectStore("customers")
+                .delete(1)
+
+        deleteData.onsuccess = function(event) {
+            console.log("Delete Data")                
+        }
+        //// DELETE DATA
+
+        //// GET DATA
+        let getData = db.transaction(["customers"], "readwrite")
+                .objectStore("customers")
+                .get(2)
+
+        getData.onsuccess = function(event) {
+            console.log("Get Data")
+            console.log(getData.result)
+        }
+        //// GET DATA
+
+        //// UPDATE DATA 
+        var updateData = db.transaction(["customers"], "readwrite")
+            .objectStore("customers");
+        var objectStoreUpdate = updateData.get(3);
+
+        objectStoreUpdate.onerror = function(event) {
+            // Handle errors  
+        };
+
+        objectStoreUpdate.onsuccess = function(event) {
+            var data = event.target.result;
+
+            data.name = 'update-my-name';
+
+            var requestUpdate = updateData.put(data);
+
+            requestUpdate.onerror = function(event) {
+                // Do something with the error
+            };
+
+            requestUpdate.onsuccess = function(event) {
+                // Success - the data is updated!
+            };
+        };
+        //// UPDATE DATA
+
+        console.log("Success Open Db")
+    };
+}
+</script>
+</body>
+</html>
