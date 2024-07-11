@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    </head>
+<body>
+    <table>
+        <tr>
+            <td>Kode</td>
+            <td>Nama</td>
+        </tr>
+        <tr>
+            <td id="code_0"></td>
+            <td id="name_0"></td>
+        </tr>
+        <tr>
+            <td id="code_1"></td>
+            <td id="name_1"></td>
+        </tr>
+
+        <tr>
+            <td id="code_2"></td>
+            <td id="name_2"></td>
+        </tr>
+    </table>
+
+
+    <button id="pull">Pull Data</button>
+    <button id="add">Tambah Data</button>
+    <button id="push">Push Data</button>
+
+    <script>
+        // REQUESET DATA 
+        let data = [];
+
+        let xhr = new XMLHttpRequest();
+
+        xhr.open('GET', 'http://localhost:8000/api/v1/test');
+        // isinya cuman return static ndak dinamis
+        
+        xhr.send();
+
+        xhr.onload = function() {
+            if (xhr.status != 200) {
+                console.log(`Error ${xhr.status}: ${xhr.statusText}`);
+            } else { 
+                onLoad(JSON.parse(xhr.response));
+            }
+        };
+
+        xhr.onerror = function() {
+            console.log("Request failed");
+
+            if (!window.indexedDB) {
+                console.log("Your browser doesn't support a stable version of IndexedDB. Such and such feature will not be available.");
+            }else{
+                var request = window.indexedDB.open("p",1);
+                            
+                request.onupgradeneeded = function(event) {
+                    db = event.target.result;
+
+                    db.onerror = function(event) {
+                        console.log(event)
+                    };
+
+                    console.log("Fungsi ini akan terpangil jika ada perubahan versi db");
+
+                    try{
+                        let objectStoreCustomers = db.createObjectStore("customers",{ 
+                            autoIncrement: true,
+                         });
+                        objectStoreCustomers.createIndex("name", "name", { unique: false });
+                        objectStoreCustomers.createIndex("code", "code", { unique: false });
+                        objectStoreCustomers.createIndex("is_online","is_online",{ unique : false});
+                    }catch(err){
+                        console.log(err)
+                        // db.deleteObjectStore("customers");        
+                    }    
+                };
+
+                request.onerror = function(event) {
+                    console.log(event);
+                };
+
+                request.onsuccess = function(event) {
+                    db = event.target.result;
+
+                    db.onerror = function(event) {
+                        console.log(event)
+                    };
+
+                    let getData = db.transaction("customers", "readwrite")
+                        .objectStore("customers")
+                        .getAll()
+
+                    getData.onsuccess = function(event) {
+                        console.log("Get Data")
+                        console.log(getData.result)
+
+                        for(let i=0;i<getData.result.length;i++){
+                            let tdName =  document.getElementById("name_" + i);
+                            tdName.innerText = getData.result[i]['name'];
+
+                            let tdCode =  document.getElementById("code_" + i);
+                            tdCode.innerText = getData.result[i]['code'];
+                        }
+                    }
+                }
+            }
+        };
+
+        function onLoad(res){
+            for(let i=0;i<res.length;i++){
+                let tdName =  document.getElementById("name_" + i);
+                tdName.innerText = res[i]['name'];
+
+                let tdCode =  document.getElementById("code_" + i);
+                tdCode.innerText = res[i]['code'];
+            }
+
+            data = [...res];
+        }
+        // REQUEST DATA 
+
+        let pullElm = document.getElementById("pull");
+
+        pullElm.addEventListener("click",function(){
+            if (!window.indexedDB) {
+                console.log("Your browser doesn't support a stable version of IndexedDB. Such and such feature will not be available.");
+            }else{
+                var request = window.indexedDB.open("p",1);
+                            
+                request.onupgradeneeded = function(event) {
+                    db = event.target.result;
+
+                    db.onerror = function(event) {
+                        console.log(event)
+                    };
+
+                    console.log("Fungsi ini akan terpangil jika ada perubahan versi db");
+
+                    try{
+                        let objectStoreCustomers = db.createObjectStore("customers",{ 
+                            autoIncrement: true,
+                         });
+                        objectStoreCustomers.createIndex("name", "name", { unique: false });
+                        objectStoreCustomers.createIndex("code", "code", { unique: false });
+                        objectStoreCustomers.createIndex("is_online","is_online",{ unique : false});
+                    }catch(err){
+                        console.log(err)
+                        // db.deleteObjectStore("customers");        
+                    }    
+                };
+
+                request.onerror = function(event) {
+                    console.log(event);
+                };
+
+                request.onsuccess = function(event) {
+                    db = event.target.result;
+
+                    db.onerror = function(event) {
+                        console.log(event)
+                    };
+
+                    let transactionObjectStore = db.transaction("customers", "readwrite");
+
+                    transactionObjectStore = transactionObjectStore.objectStore("customers")
+                    
+                    for(let i=0;i<data.length;i++){
+                        transactionObjectStore.add({
+                            code : data[i].code,
+                            name : data[i].name,
+                            is_online : true
+                        })
+                    }
+
+                    transactionObjectStore.oncomplete = function(event){
+                        console.log("Create Data")
+                    }
+
+                    transactionObjectStore.onerror = function(event){
+                        console.log(event)
+                    }
+                }
+            }
+        });
+
+
+
+        let pushElm = document.getElementById("push");
+
+        pushElm.addEventListener("click",function(){
+            if (!window.indexedDB) {
+                console.log("Your browser doesn't support a stable version of IndexedDB. Such and such feature will not be available.");
+            }else{
+                var request = window.indexedDB.open("p",1);
+                            
+                request.onupgradeneeded = function(event) {
+                    db = event.target.result;
+
+                    db.onerror = function(event) {
+                        console.log(event)
+                    };
+
+                    console.log("Fungsi ini akan terpangil jika ada perubahan versi db");
+
+                    try{
+                        let objectStoreCustomers = db.createObjectStore("customers",{ 
+                            autoIncrement: true,
+                         });
+                        objectStoreCustomers.createIndex("name", "name", { unique: false });
+                        objectStoreCustomers.createIndex("code", "code", { unique: false });
+                        objectStoreCustomers.createIndex("is_online","is_online",{ unique : false});
+                    }catch(err){
+                        console.log(err)
+                        // db.deleteObjectStore("customers");        
+                    }    
+                };
+
+                request.onerror = function(event) {
+                    console.log(event);
+                };
+
+                request.onsuccess = function(event) {
+                    db = event.target.result;
+
+                    db.onerror = function(event) {
+                        console.log(event)
+                    };
+
+                    let getData = db.transaction("customers", "readwrite")
+                        .objectStore("customers")
+                        .openCursor();
+
+                    getData.onsuccess = function(event){
+                        let cursor = getData.result;
+                        if (cursor) {
+                            let key = cursor.key; 
+                            let value = cursor.value;
+                            console.log(key, value);
+                            cursor.continue();
+                        } else {
+                            console.log("No more books");
+                        }
+                    }
+                }
+            }
+        })
+        
+        let addElm = document.getElementById("add");
+
+        addElm.addEventListener("click",function(){
+            if (!window.indexedDB) {
+                console.log("Your browser doesn't support a stable version of IndexedDB. Such and such feature will not be available.");
+            }else{
+                var request = window.indexedDB.open("p",1);
+                            
+                request.onupgradeneeded = function(event) {
+                    db = event.target.result;
+
+                    db.onerror = function(event) {
+                        console.log(event)
+                    };
+
+                    console.log("Fungsi ini akan terpangil jika ada perubahan versi db");
+
+                    try{
+                        let objectStoreCustomers = db.createObjectStore("customers",{ 
+                            autoIncrement: true,
+                         });
+                        objectStoreCustomers.createIndex("name", "name", { unique: false });
+                        objectStoreCustomers.createIndex("code", "code", { unique: false });
+                        objectStoreCustomers.createIndex("is_online","is_online",{ unique : false});
+                    }catch(err){
+                        console.log(err)
+                        // db.deleteObjectStore("customers");        
+                    }    
+                };
+
+                request.onerror = function(event) {
+                    console.log(event);
+                };
+
+                request.onsuccess = function(event) {
+                    db = event.target.result;
+
+                    db.onerror = function(event) {
+                        console.log(event)
+                    };
+
+                    let transactionObjectStore = db.transaction("customers", "readwrite");
+
+                    transactionObjectStore = transactionObjectStore.objectStore("customers")
+                    
+                    transactionObjectStore.add({
+                        code : 3,
+                        name : 'c',
+                        is_online : false
+                    })
+
+                    transactionObjectStore.oncomplete = function(event){
+                        console.log("Create Data")
+                    }
+
+                    transactionObjectStore.onerror = function(event){
+                        console.log(event)
+                    }
+                }
+            }
+        })
+    </script>
+</body>
+</html>
